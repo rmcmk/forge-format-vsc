@@ -62,7 +62,7 @@ function parseDiff(
   // Group 4: The rest of the line
   const regex = /^(\d+)?\s*(\d+)?\s*\|\s*([-+])?(.*)$/;
 
-  lines.forEach((line) => {
+  loop: for (const line of lines) {
     if (line.startsWith(diffStartToken)) {
       currentFile = line.slice(diffStartToken.length).trim();
       console.log(`Parsing diff for file: ${currentFile}`);
@@ -70,8 +70,10 @@ function parseDiff(
       const match = line.match(regex);
 
       if (!match) {
-        console.error(`Skipping line. Unexpected token: ${line}`);
-        return;
+        vscode.window.showErrorMessage(
+          `Unable to format: Unexpected token on line: ${line}`
+        );
+        break;
       }
 
       const oldLineNumber = parseInt(match[1]);
@@ -79,25 +81,31 @@ function parseDiff(
       const action = match[3];
       const content = match[4];
 
-      if (action === "+") {
-        if (!isNaN(oldLineNumber) || isNaN(newLineNumber)) {
-          console.error(`Skipping line. New line number is missing: ${line}`);
-          return;
-        }
-        const position = new vscode.Position(newLineNumber - 1, 0);
-        textEdits.push(vscode.TextEdit.insert(position, content));
-      }
+      switch (action) {
+        case "+":
+          if (!isNaN(oldLineNumber) || isNaN(newLineNumber)) {
+            vscode.window.showErrorMessage(
+              `Unable to format: New line number is missing: ${line}`
+            );
+            break loop;
+          }
+          const position = new vscode.Position(newLineNumber - 1, 0);
+          textEdits.push(vscode.TextEdit.insert(position, content));
+          continue loop;
 
-      if (action === "-") {
-        if (isNaN(oldLineNumber) || !isNaN(newLineNumber)) {
-          console.error(`Skipping line. Old line number is missing: ${line}`);
-          return;
-        }
-        const range = document.lineAt(oldLineNumber - 1).range;
-        textEdits.push(vscode.TextEdit.delete(range));
+        case "-":
+          if (isNaN(oldLineNumber) || !isNaN(newLineNumber)) {
+            vscode.window.showErrorMessage(
+              `Unable to format: Old line number is missing: ${line}`
+            );
+            break loop;
+          }
+          const range = document.lineAt(oldLineNumber - 1).range;
+          textEdits.push(vscode.TextEdit.delete(range));
+          continue loop;
       }
     }
-  });
+  }
 
   return textEdits;
 }
