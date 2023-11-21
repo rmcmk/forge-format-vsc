@@ -1,5 +1,5 @@
 import { getFoundry } from "./foundry";
-import { parse, getEntireFileRange } from "./formatter";
+import { parse } from "./formatter";
 import { getEditorConfig } from "./config";
 import * as vscode from "vscode";
 
