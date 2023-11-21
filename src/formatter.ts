@@ -11,29 +11,46 @@ class ParseError extends Error {
   }
 }
 
+// Captures the line number, action, and content of a diff line
+// Group 1: Start line number (optional)
+// Group 2: End line number (optional)
+// Group 3: Action (+, -, or nothing)
+// Group 4: The rest of the line
+const DIFF_REGEX = /^(\d+)?\s*(\d+)?\s*\|([-+])?(.*)?/;
+
 const EMPTY_TEXT_EDITS: vscode.TextEdit[] = [];
 
 export async function parse(
   foundry: Foundry,
-  document: vscode.TextDocument
+  document: vscode.TextDocument,
+  range?: vscode.Range
 ): Promise<vscode.TextEdit[]> {
-  return await _parse(foundry, document);
+  return await _parse(foundry, document, range);
 }
 async function _parse(
   foundry: Foundry,
-  document: vscode.TextDocument
+  document: vscode.TextDocument,
+  range?: vscode.Range
 ): Promise<vscode.TextEdit[]> {
   try {
-    // If the document has changes, save it before formatting.
-    // We must do this as forge operates on files, not buffers.
-    // TODO: Potentially we could pipe the buffer to forge's stdin?
-    if (document.isDirty) {
-      await document.save();
+    // If no range is provided, assume the entire document
+    if (!range) {
+      range = new vscode.Range(
+        0,
+        0,
+        document.lineCount - 1,
+        document.lineAt(document.lineCount - 1).range.end.character
+      );
     }
 
-    const path = document.fileName;
-    const cmd = `"${foundry.forgeBinaryPath}" fmt "${path}" --check`;
-    const { stdout, exitCode } = await executeCommand(cmd);
+    const text = document.getText(range);
+    const { stdout, exitCode } = await executeCommand(
+      foundry.forgeBinaryPath,
+      ["fmt", "-", "--check"],
+      text
+    ).catch((error) => {
+      throw new ParseError(`Formatting failed: ${error}`);
+    });
 
     /**
      * Exit codes:
@@ -45,14 +62,13 @@ async function _parse(
       return EMPTY_TEXT_EDITS;
     }
 
-    const edits = parseDiff(stdout, document);
+    const edits = parseDiff(stdout, document, range);
     if (edits.length === 0) {
       throw new ParseError(
         "Parsing failed. Forge returned an exit code of 1 but no diffs were found."
       );
     }
 
-    console.log(`Diffs: ${edits.length} in ${path}`);
     return edits;
   } catch (error) {
     console.error("Formatting failed with error: ", error);
@@ -70,27 +86,26 @@ async function _parse(
 
 function parseDiff(
   diff: string,
-  document: vscode.TextDocument
+  document: vscode.TextDocument,
+  range: vscode.Range
 ): vscode.TextEdit[] {
+  // The input can be from a file or stdin.
+  // If it is from a file, the first line will be "Diff in <filename>:"
+  // If it is from stdin, the first line will be "Diff in stdin:"
+  let inputFrom: string | null = null;
   const diffStartToken = "Diff in ";
-  let currentFile: string | null = null;
 
   const lines = diff.split("\n");
   const textEdits: vscode.TextEdit[] = [];
 
-  // Captures the line number, action, and content of a diff line
-  // Group 1: Start line number (optional)
-  // Group 2: End line number (optional)
-  // Group 3: Action (+, -, or nothing)
-  // Group 4: The rest of the line
-  const regex = /^(\d+)?\s*(\d+)?\s*\|([-+])?(.*)?/;
+  const startLine = range.start.line;
 
   for (const line of lines) {
     if (line.startsWith(diffStartToken)) {
-      currentFile = line.slice(diffStartToken.length).trim();
-      console.log(`Parsing diff for file: ${currentFile}`);
-    } else if (currentFile && line) {
-      const match = line.match(regex);
+      inputFrom = line.slice(diffStartToken.length - 1).trim();
+      console.log(`Parsing diff from: ${inputFrom}`);
+    } else if (inputFrom && line) {
+      const match = line.match(DIFF_REGEX);
 
       if (!match) {
         throw new ParseError(`Unable to parse diff line: ${line}`);
@@ -105,7 +120,7 @@ function parseDiff(
         if (!isNaN(oldLineNumber) || isNaN(newLineNumber)) {
           throw new ParseError(`Unable to parse diff line: ${line}`);
         }
-        const position = new vscode.Position(newLineNumber - 1, 0);
+        const position = new vscode.Position(startLine + newLineNumber - 1, 0);
         textEdits.push(vscode.TextEdit.insert(position, content));
         continue;
       }
@@ -114,7 +129,7 @@ function parseDiff(
         if (isNaN(oldLineNumber) || !isNaN(newLineNumber)) {
           throw new ParseError(`Unable to parse diff line: ${line}`);
         }
-        const range = document.lineAt(oldLineNumber - 1).range;
+        const range = document.lineAt(startLine + oldLineNumber - 1).range;
         textEdits.push(vscode.TextEdit.delete(range));
         continue;
       }

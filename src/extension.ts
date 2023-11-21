@@ -1,18 +1,21 @@
 import { getFoundry } from "./foundry";
-import { parse } from "./formatter";
+import { parse, getEntireFileRange } from "./formatter";
 import { getEditorConfig } from "./config";
 import * as vscode from "vscode";
 
 export function activate(context: vscode.ExtensionContext) {
   const foundry = getFoundry();
 
-  vscode.languages.registerDocumentFormattingEditProvider(
+  vscode.languages.registerDocumentRangeFormattingEditProvider(
     { scheme: "file", language: "solidity" },
     {
-      async provideDocumentFormattingEdits(
-        document: vscode.TextDocument
+      async provideDocumentRangeFormattingEdits(
+        document: vscode.TextDocument,
+        range: vscode.Range,
+        options: vscode.FormattingOptions,
+        token: vscode.CancellationToken
       ): Promise<vscode.TextEdit[]> {
-        return await parse(foundry, document);
+        return await parse(foundry, document, range);
       },
     }
   );
