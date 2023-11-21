@@ -13,17 +13,24 @@ class ParseError extends Error {
 
 const EMPTY_TEXT_EDITS: vscode.TextEdit[] = [];
 
-export async function parseAndFormat(
+export async function parse(
   foundry: Foundry,
   document: vscode.TextDocument
 ): Promise<vscode.TextEdit[]> {
-  return await _parseAndFormat(foundry, document);
+  return await _parse(foundry, document);
 }
-async function _parseAndFormat(
+async function _parse(
   foundry: Foundry,
   document: vscode.TextDocument
 ): Promise<vscode.TextEdit[]> {
   try {
+    // If the document has changes, save it before formatting.
+    // We must do this as forge operates on files, not buffers.
+    // TODO: Potentially we could pipe the buffer to forge's stdin?
+    if (document.isDirty) {
+      await document.save();
+    }
+
     const path = document.fileName;
     const cmd = `"${foundry.forgeBinaryPath}" fmt "${path}" --check`;
     const { stdout, exitCode } = await executeCommand(cmd);

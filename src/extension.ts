@@ -1,5 +1,5 @@
 import { getFoundry } from "./foundry";
-import { parseAndFormat } from "./formatter";
+import { parse } from "./formatter";
 import { getEditorConfig } from "./config";
 import * as vscode from "vscode";
 
@@ -12,19 +12,32 @@ export function activate(context: vscode.ExtensionContext) {
       async provideDocumentFormattingEdits(
         document: vscode.TextDocument
       ): Promise<vscode.TextEdit[]> {
-        return parseAndFormat(foundry, document);
+        return await parse(foundry, document);
       },
     }
   );
 
   context.subscriptions.push(
-    vscode.workspace.onWillSaveTextDocument((event) => {
-      const document = event.document;
-      if (
-        document.languageId === "solidity" && getEditorConfig().formatOnSave
-      ) {
-        event.waitUntil(parseAndFormat(foundry, document));
+    vscode.workspace.onDidSaveTextDocument((document) => {
+      if (document.languageId !== "solidity") {
+        return;
       }
+      if (!getEditorConfig().formatOnSave) {
+        return;
+      }
+      parse(foundry, document).then((textEdits) => {
+        // If the document is dirty, we don't want to apply the edits.
+        // In between parsing and applying the edits, the user may have made changes to the document.
+        if (document.isDirty) {
+          return;
+        }
+
+        const edit = new vscode.WorkspaceEdit();
+        edit.set(document.uri, textEdits);
+        vscode.workspace.applyEdit(edit).then(() => {
+          document.save(); // Be sure to save the document after applying the edits.
+        });
+      });
     })
   );
 
