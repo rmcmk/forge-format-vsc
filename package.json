@@ -3,7 +3,12 @@
   "displayName": "Forge (Foundry) Format",
   "publisher": "rmcmk",
   "description": "Formats Solidity (*.sol) using `forge fmt` from Foundry",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rmcmk/forge-format-vsc"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.84.0"
   },
