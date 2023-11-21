@@ -76,7 +76,7 @@ function parseDiff(
   // Group 2: End line number (optional)
   // Group 3: Action (+, -, or nothing)
   // Group 4: The rest of the line
-  const regex = /^(\d+)?\s*(\d+)?\s*\|\s*([-+])?\s*(.*)\s*$/;
+  const regex = /^(\d+)?\s*(\d+)?\s*\|([-+])?(.*)?/;
 
   for (const line of lines) {
     if (line.startsWith(diffStartToken)) {
