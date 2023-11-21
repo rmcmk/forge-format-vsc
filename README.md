@@ -31,7 +31,9 @@ The extension also provides an editor configuration. These settings are derived 
 
 ## Known Issues
 
-There are currently no known issues. If you encounter any problems, please check the [issues page](https://github.com/rmcmk/forge-format-vsc/issues) on GitHub or report a new issue.
+- Formatting a range containing "invalid" Solidity, such as a snippet missing a closing bracket, may fail if Forge cannot construct a valid Parse Tree for the selected snippet.
+
+If you come across any other issues, please refer to the [GitHub issues page](https://github.com/rmcmk/forge-format-vsc/issues) or report a new issue.
 
 ## Release Notes
 
