@@ -8,6 +8,21 @@
     "type": "git",
     "url": "https://github.com/rmcmk/forge-format-vsc"
   },
+  "author": {
+    "name": "Ryley Kimmel",
+    "email": "ryley@hlwgroup.dev"
+  },
+  "keywords": [
+    "format solidity",
+    "forge format",
+    "foundry format",
+    "forge fmt"
+  ],
+  "homepage": "https://github.com/rmcmk/forge-format-vsc?tab=readme-ov-file#forge-format-vsc",
+  "bugs": {
+    "url": "https://github.com/rmcmk/forge-format-vsc/issues",
+    "email": "ryley@hlwgroup.dev"
+  },
   "license": "MIT",
   "engines": {
     "vscode": "^1.84.0"
