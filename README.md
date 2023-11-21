@@ -1,71 +1,42 @@
-# forge-format-vsc README
+# Forge Format VSC
 
-This is the README for your extension "forge-format-vsc". After writing up a brief description, we recommend including the following sections.
+Welcome to the "Forge Format VSC" extension! This VSCode extension simplifies Solidity file formatting using Forge, a tool from Foundry. Easily format your Solidity files directly within the Visual Studio Code editor or utilize the right-click context menu for individual files or entire folders.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- **Forge Formatting:** Leverage the power of Forge from Foundry for efficient Solidity file formatting.
+- **Context Menu Integration:** Conveniently format files or entire folders directly from the VSCode context menu.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- **Foundry:** Ensure that Foundry is installed on your machine. You can download it from [getfoundry.sh](https://getfoundry.sh/).
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+This extension provides several configuration options:
 
-For example:
+- **rmcmk.forge-format-vsc.includePaths:** A `string` array of globs to be included for formatting. If left undefined or empty, all paths will be formatted.
+- **rmcmk.forge-format-vsc.excludePaths:** A `string` array of globs to be excluded from formatting. If left undefined or empty, no paths will be excluded.
+- **rmcmk.forge-format-vsc.workspace:** Configure the workspace settings. It has two properties:
+  - **rmcmk.forge-format-vsc.workspace.automatic:** A `boolean`. If set to `true`, the extension will automatically detect the workspace root by looking at `vscode.workspace.workspaceFolders` and grabbing the first index.
+  - **rmcmk.forge-format-vsc.workspace.overrideRoot:** A `string`. Specify the workspace root to use. If both `overrideRoot` and `automatic` are true, `overrideRoot` will be used.
 
-This extension contributes the following settings:
+These settings can be adjusted in the VS Code settings.
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Editor Configuration
+
+The extension also provides an editor configuration. These settings are derived from the VS Code default settings. If you want to change these, you can do so in your VS Code settings. This extension will not override these settings. 
+
+- **editor.formatOnSave:** A `boolean`. If set to `true`, the extension will automatically format your files on save.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+There are currently no known issues. If you encounter any problems, please check the [issues page](https://github.com/rmcmk/forge-format-vsc/issues) on GitHub or report a new issue.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+- Initial release of "Forge Format VSC."
 
 **Enjoy!**
