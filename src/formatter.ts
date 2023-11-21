@@ -53,37 +53,47 @@ function parseDiff(
   let currentFile: string | null = null;
 
   const lines = diff.split("\n");
-
   const textEdits: vscode.TextEdit[] = [];
+
+  // Captures the line number, action, and content of a diff line
+  // Group 1: Start line number (optional)
+  // Group 2: End line number (optional)
+  // Group 3: Action (+, -, or nothing)
+  // Group 4: The rest of the line
+  const regex = /^(\d+)?\s*(\d+)?\s*\|\s*([-+])?(.*)$/;
 
   lines.forEach((line) => {
     if (line.startsWith(diffStartToken)) {
-      currentFile = line
-        .substring(diffStartToken.length, line.length - 1)
-        .trim();
+      currentFile = line.slice(diffStartToken.length).trim();
       console.log(`Parsing diff for file: ${currentFile}`);
     } else if (currentFile && line) {
-      // Extracts all metadata from the diff, including the lines content
-      const metadataLastIndex = line.indexOf("|") + 2;
+      const match = line.match(regex);
 
-      // Extract the metadata from this diff. The metadata is in the format:
-      // <line number>|<action> and the content always follows after the metadata on the same line.
-      // The metadata is always at the start of the line, so we can extract it
-      // The metadata can also contain leading, trailing and arbitrary whitespace so we must remove it
-      const metadata = line
-        .substring(0, metadataLastIndex)
-        .replaceAll(/\s/g, "")
-        .split("|");
-      const lineNumber = parseInt(metadata[0]);
-      const action = metadata[1];
-      const content = line.substring(metadataLastIndex);
+      if (!match) {
+        console.error(`Skipping line. Unexpected token: ${line}`);
+        return;
+      }
 
-      const position = new vscode.Position(lineNumber - 1, 0);
-      const range = document.lineAt(lineNumber - 1).range;
+      const oldLineNumber = parseInt(match[1]);
+      const newLineNumber = parseInt(match[2]);
+      const action = match[3];
+      const content = match[4];
 
       if (action === "+") {
+        if (!isNaN(oldLineNumber) || isNaN(newLineNumber)) {
+          console.error(`Skipping line. New line number is missing: ${line}`);
+          return;
+        }
+        const position = new vscode.Position(newLineNumber - 1, 0);
         textEdits.push(vscode.TextEdit.insert(position, content));
-      } else if (action === "-") {
+      }
+
+      if (action === "-") {
+        if (isNaN(oldLineNumber) || !isNaN(newLineNumber)) {
+          console.error(`Skipping line. Old line number is missing: ${line}`);
+          return;
+        }
+        const range = document.lineAt(oldLineNumber - 1).range;
         textEdits.push(vscode.TextEdit.delete(range));
       }
     }
