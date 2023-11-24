@@ -126,16 +126,12 @@ function parseDiff(
         }
         const position = new vscode.Position(startLine + newLineNumber - 1, 0);
         textEdits.push(vscode.TextEdit.insert(position, content));
-        continue;
-      }
-
-      if (action === "-") {
+      } else if (action === "-") {
         if (isNaN(oldLineNumber) || !isNaN(newLineNumber)) {
           throw new ParseError(`Unable to parse diff line: ${line}`);
         }
         const range = document.lineAt(startLine + oldLineNumber - 1).range;
         textEdits.push(vscode.TextEdit.delete(range));
-        continue;
       }
     }
   }

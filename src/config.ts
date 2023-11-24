@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { publisher, name } from "../../package.json";
+import { publisher, name } from "../package.json";
 
 /**
  * The default section name for the extension configuration. This is the publisher and name in package.json.
