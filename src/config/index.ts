@@ -7,15 +7,6 @@ import { publisher, name } from "../../package.json";
 export const DEFAULT_SECTION_NAME = `${publisher}.${name}`;
 
 /**
- * The default configuration for the extension.
- */
-const DEFAULT_CONFIG: ForgeFormatConfig = {
-  workspace: {
-    automatic: true,
-  },
-};
-
-/**
  * Workspace configuration.
  */
 export interface Workspace {
@@ -36,11 +27,19 @@ export class ForgeFormatConfig {
   /**
    * Globs to be included to be formatted. If `undefined` or `[]`, all paths will be formatted.
    */
-  includePaths?: string[];
+  includeGlobs?: string[];
   /**
    * Globs to be excluded from formatting. If `undefined` or `[]`, no paths will be excluded.
    */
-  excludePaths?: string[];
+  excludeGlobs?: string[];
+  /**
+   * Whether to save the file after formatting.
+   */
+  saveAfterFormat?: boolean;
+  /**
+   * Whether to close the document after saving.
+   */
+  closeAfterSave?: boolean;
   /**
    * The workspace configuration.
    */
@@ -61,6 +60,27 @@ export type EditorConfig = {
   formatOnSave?: boolean;
 };
 
+export function initializeDefaults() {
+  // TODO: Would be useful to find a `foundry.toml` and parse it to get sensible defaults
+  // for the configuration depending on the environment this extension is ran in.
+  setDefaultConfig("saveAfterFormat", true);
+  setDefaultConfig("closeAfterSave", false);
+
+  setDefaultConfig("includeGlobs", ["**/*.sol"]);
+  setDefaultConfig("excludeGlobs", [
+    "node_modules/**",
+    "lib/**",
+    "out/**",
+    "cache/**",
+    ".github/**",
+    ".vscode/**",
+  ]);
+
+  setDefaultConfig("workspace", {
+    automatic: true,
+  });
+}
+
 /**
  * Gets the configuration value for the given key.
  * @param name The key to get the configuration value for.
@@ -69,7 +89,7 @@ export type EditorConfig = {
 export function getConfig<T extends ConfigKey>(name: T): ForgeFormatConfig[T] {
   return vscode.workspace
     .getConfiguration(DEFAULT_SECTION_NAME)
-    .get(name, DEFAULT_CONFIG[name]) as ForgeFormatConfig[T];
+    .get(name) as ForgeFormatConfig[T];
 }
 
 /**
@@ -85,6 +105,22 @@ export function setConfig<T extends ConfigKey>(
   return vscode.workspace
     .getConfiguration(DEFAULT_SECTION_NAME)
     .update(name, value, true);
+}
+
+/**
+ * Sets the configuration value for the given key if it is not already set.
+ * @param name The key to set the configuration value for.
+ * @param value The value to set the configuration to.
+ * @returns A promise that resolves when the configuration has been set.
+ */
+function setDefaultConfig<T extends ConfigKey>(
+  name: T,
+  value: ForgeFormatConfig[T]
+): Thenable<void> {
+  if (getConfig(name) === undefined) {
+    return setConfig(name, value);
+  }
+  return Promise.resolve();
 }
 
 /**

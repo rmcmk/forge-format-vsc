@@ -1,10 +1,11 @@
 import { getFoundry } from "./foundry";
 import { parse } from "./formatter";
-import { getEditorConfig } from "./config";
+import { getConfig, getEditorConfig, initializeDefaults } from "./config";
 import * as vscode from "vscode";
 
 export function activate(context: vscode.ExtensionContext) {
   const foundry = getFoundry();
+  initializeDefaults();
 
   vscode.languages.registerDocumentRangeFormattingEditProvider(
     { scheme: "file", language: "solidity" },
@@ -29,16 +30,12 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
       parse(foundry, document).then((textEdits) => {
-        // If the document is dirty, we don't want to apply the edits.
-        // In between parsing and applying the edits, the user may have made changes to the document.
-        if (document.isDirty) {
-          return;
-        }
-
         const edit = new vscode.WorkspaceEdit();
         edit.set(document.uri, textEdits);
         vscode.workspace.applyEdit(edit).then(() => {
-          document.save(); // Be sure to save the document after applying the edits.
+          if (getConfig("saveAfterFormat")) {
+            document.save();
+          }
         });
       });
     })

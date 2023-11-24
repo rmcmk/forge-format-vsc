@@ -35,43 +35,56 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "configuration": {
-      "title": "Forge Format VSC",
-      "properties": {
-        "rmcmk.forge-format-vsc.includePaths": {
-          "type": "array",
-          "default": [],
-          "description": "An array of globs that should be included when formatting."
-        },
-        "rmcmk.forge-format-vsc.excludePaths": {
-          "type": "array",
-          "default": [],
-          "description": "An array of globs that should be excluded when formatting."
-        },
-        "rmcmk.forge-format-vsc.workspace": {
-          "type": "object",
-          "default": {
-            "automatic": true,
-            "overrideRoot": null
-          },
-          "properties": {
-            "rmcmk.forge-format-vsc.workspace.automatic": {
-              "type": "boolean",
-              "default": true,
-              "description": "Whether or not to detect the workspace root."
-            },
-            "rmcmk.forge-format-vsc.workspace.overrideRoot": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "default": null,
-              "description": "The workspace root to use if `automatic` is `false`."
+    "configuration": [
+      {
+        "title": "Forge Format VSC",
+        "properties": {
+          "rmcmk.forge-format-vsc.includeGlobs": {
+            "type": "array",
+            "default": ["**/*.sol"],
+            "description": "An array of globs that should be included when formatting.",
+            "items": {
+              "type": "string"
             }
+          },
+          "rmcmk.forge-format-vsc.excludeGlobs": {
+            "type": "array",
+            "default": [
+              "node_modules/**",
+              "lib/**",
+              "out/**",
+              "cache/**",
+              ".github/**",
+              ".vscode/**"
+            ],
+            "description": "An array of globs that should be excluded when formatting.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rmcmk.forge-format-vsc.saveAfterFormat": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to save the file after formatting."
+          },
+          "rmcmk.forge-format-vsc.closeAfterSave": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to close the document after saving."
+          },
+          "rmcmk.forge-format-vsc.workspace.automatic": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether or not to detect the workspace root."
+          },
+          "rmcmk.forge-format-vsc.workspace.overrideRoot": {
+            "type": "string",
+            "default": null,
+            "description": "The workspace root to use if `automatic` is `false`."
           }
         }
       }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
