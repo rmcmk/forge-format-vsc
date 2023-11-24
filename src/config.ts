@@ -11,7 +11,7 @@ export const DEFAULT_SECTION_NAME = `${publisher}.${name}`;
  */
 export class ForgeFormatConfig {
   /**
-   * Globs to be included to be formatted. If `undefined` or `[]`, all paths will be formatted.
+   * Globs to be included to be formatted. If `undefined` or `[]`, all paths will be considered for formatting as long as the files match `**\/*.sol`
    */
   includeGlobs?: string[];
   /**
