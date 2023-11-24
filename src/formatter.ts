@@ -1,7 +1,7 @@
 import { Foundry } from "./foundry";
 import * as vscode from "vscode";
 import { executeCommand } from "./bin";
-import { getWorkspacePath } from "./config";
+import { getWorkspacePath, isUriExcluded, isUriIncluded } from "./config";
 
 class ParseError extends Error {
   constructor(message: string) {
@@ -26,15 +26,15 @@ export async function parse(
   document: vscode.TextDocument,
   range?: vscode.Range
 ): Promise<vscode.TextEdit[]> {
-  return await _parse(foundry, document, range);
-}
-async function _parse(
-  foundry: Foundry,
-  document: vscode.TextDocument,
-  range?: vscode.Range
-): Promise<vscode.TextEdit[]> {
   try {
-    const workspace = getWorkspacePath();
+    const uri = document.uri;
+    if (!isUriIncluded(uri)) {
+      throw new ParseError(`File is not included: ${uri}`);
+    }
+
+    if (isUriExcluded(uri)) {
+      throw new ParseError(`File is excluded: ${uri}`);
+    }
 
     // If no range is provided, assume the entire document
     if (!range) {
@@ -46,6 +46,7 @@ async function _parse(
       );
     }
 
+    const workspace = getWorkspacePath();
     const text = document.getText(range);
     const { stdout, exitCode } = await executeCommand(
       foundry.forgeBinaryPath,

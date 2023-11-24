@@ -41,7 +41,9 @@
         "properties": {
           "rmcmk.forge-format-vsc.includeGlobs": {
             "type": "array",
-            "default": ["**/*.sol"],
+            "default": [
+              "**/*.sol"
+            ],
             "description": "An array of globs that should be included when formatting.",
             "items": {
               "type": "string"
@@ -98,6 +100,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.3",
     "@types/node": "18.x",
     "@types/vscode": "^1.84.0",
@@ -106,6 +109,7 @@
     "@vscode/test-electron": "^2.3.6",
     "eslint": "^8.52.0",
     "glob": "^10.3.10",
+    "minimatch": "^9.0.3",
     "mocha": "^10.2.0",
     "ts-loader": "^9.5.0",
     "type-fest": "^4.8.1",

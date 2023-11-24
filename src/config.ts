@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { minimatch } from "minimatch";
 import { publisher, name } from "../package.json";
 
 /**
@@ -117,38 +118,41 @@ function setDefaultConfig<T extends ConfigKey>(
   name: T,
   value: ForgeFormatConfig[T]
 ): Thenable<void> {
-  if (getConfig(name) === undefined) {
-    return setConfig(name, value);
-  }
-  return Promise.resolve();
+  return getConfig(name) === undefined
+    ? setConfig(name, value)
+    : Promise.resolve();
 }
 
 /**
- * Gets the include pattern for the given base path.
- * @param base The base path to get the include pattern for.
- * @returns The include pattern for the given base path.
+ * Check if a URI matches any of the include glob patterns.
+ * @param uri - The URI to check.
+ * @param includeGlobs - Array of include glob patterns.
+ * @returns `true` iff the URI is included.
  */
-export function getIncludePattern(base: string): vscode.RelativePattern {
-  const include = getConfig("includeGlobs");
-  if (!include || include.length === 0) {
-    return new vscode.RelativePattern(base, "**/*.sol");
+export function isUriIncluded(uri: vscode.Uri): boolean {
+  const filePath = vscode.workspace.asRelativePath(uri);
+  let includeGlobs = getConfig("includeGlobs");
+  if (!includeGlobs || includeGlobs.length === 0) {
+    includeGlobs = ["**/*.sol"];
   }
-  return new vscode.RelativePattern(base, include.join(","));
+
+  return includeGlobs.some((pattern) => minimatch(filePath, pattern));
 }
 
 /**
- * Gets the exclude pattern for the given base path.
- * @param base The base path to get the exclude pattern for.
- * @returns The exclude pattern for the given base path.
+ * Check if a URI matches any of the exclude glob patterns.
+ * @param uri - The URI to check.
+ * @param excludeGlobs - Array of exclude glob patterns.
+ * @returns `true` iff the URI is excluded.
  */
-export function getExcludePattern(
-  base: string
-): vscode.RelativePattern | undefined {
-  const exclude = getConfig("excludeGlobs");
-  if (!exclude || exclude.length === 0) {
-    return undefined;
+export function isUriExcluded(uri: vscode.Uri): boolean {
+  const filePath = vscode.workspace.asRelativePath(uri);
+  const excludeGlobs = getConfig("excludeGlobs");
+  if (!excludeGlobs || excludeGlobs.length === 0) {
+    return false;
   }
-  return new vscode.RelativePattern(base, exclude.join(","));
+
+  return excludeGlobs.some((pattern) => minimatch(filePath, pattern));
 }
 
 /**

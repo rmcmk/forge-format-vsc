@@ -23,6 +23,12 @@ export function executeCommand(
   cwd?: string
 ): Promise<{ exitCode: number; stdout: string }> {
   console.log(`Executing command: ${command} ${args.join(" ")}`);
+  if (cwd) {
+    console.log(`Working directory: ${cwd}`);
+  }
+  if (input) { // TODO: debug mode & verbosity settings for these kinds of logs
+    console.log(`Input:\n${input}`);
+  }
 
   return new Promise((resolve, reject) => {
     const childProcess = spawnCommand(command, args, cwd);
