@@ -1,6 +1,7 @@
 import { Foundry } from "./foundry";
 import * as vscode from "vscode";
 import { executeCommand } from "./bin";
+import { getWorkspacePath } from "./config";
 
 class ParseError extends Error {
   constructor(message: string) {
@@ -33,6 +34,8 @@ async function _parse(
   range?: vscode.Range
 ): Promise<vscode.TextEdit[]> {
   try {
+    const workspace = getWorkspacePath();
+
     // If no range is provided, assume the entire document
     if (!range) {
       range = new vscode.Range(
@@ -47,7 +50,8 @@ async function _parse(
     const { stdout, exitCode } = await executeCommand(
       foundry.forgeBinaryPath,
       ["fmt", "-", "--check"],
-      text
+      text,
+      workspace
     ).catch((error) => {
       throw new ParseError(`Formatting failed: ${error}`);
     });

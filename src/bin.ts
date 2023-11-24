@@ -13,12 +13,13 @@ import { getWorkspacePath } from "./config";
 export function executeCommand(
   command: string,
   args: string[],
-  input: string
+  input: string,
+  cwd?: string
 ): Promise<{ exitCode: number; stdout: string }> {
   console.log(`Executing command: ${command} ${args.join(" ")}`);
 
   return new Promise((resolve, reject) => {
-    const childProcess = spawnCommand(command, args);
+    const childProcess = spawnCommand(command, args, cwd);
 
     let stdoutData = "";
     let stderrData = "";
@@ -61,11 +62,12 @@ export function executeCommand(
  * Spawns a child process with specified command and arguments.
  * @param command The command to execute.
  * @param args The arguments to pass to the command.
+ * @param cwd The working directory to execute the command in.
  * @returns The spawned child process.
  */
-function spawnCommand(command: string, args: string[]): ChildProcess {
+function spawnCommand(command: string, args: string[], cwd?: string): ChildProcess {
   return spawn(command, args, {
     stdio: ["pipe", "pipe", "pipe"],
-    cwd: getWorkspacePath(),
+    cwd: cwd,
   });
 }

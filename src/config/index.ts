@@ -7,20 +7,6 @@ import { publisher, name } from "../../package.json";
 export const DEFAULT_SECTION_NAME = `${publisher}.${name}`;
 
 /**
- * Workspace configuration.
- */
-export interface Workspace {
-  /**
-   * Whether to automatically detect the workspace root. We find this by looking at `vscode.workspace.workspaceFolders` and grabbing the first index.
-   */
-  automatic?: boolean;
-  /**
-   * The workspace root to use. If `overrideRoot` and `automatic` is `true`, `overrideRoot` will be used.
-   */
-  overrideRoot?: string;
-}
-
-/**
  * The extension configuration.
  */
 export class ForgeFormatConfig {
@@ -44,6 +30,20 @@ export class ForgeFormatConfig {
    * The workspace configuration.
    */
   workspace?: Workspace;
+}
+
+/**
+ * Workspace configuration.
+ */
+export interface Workspace {
+  /**
+   * Whether to automatically detect the workspace root. We find this by looking at `vscode.workspace.workspaceFolders` and grabbing the first index.
+   */
+  automatic?: boolean;
+  /**
+   * The workspace root to use. If `overrideRoot` and `automatic` is `true`, `overrideRoot` will be used.
+   */
+  overrideRoot?: string;
 }
 
 /**
@@ -121,6 +121,34 @@ function setDefaultConfig<T extends ConfigKey>(
     return setConfig(name, value);
   }
   return Promise.resolve();
+}
+
+/**
+ * Gets the include pattern for the given base path.
+ * @param base The base path to get the include pattern for.
+ * @returns The include pattern for the given base path.
+ */
+export function getIncludePattern(base: string): vscode.RelativePattern {
+  const include = getConfig("includeGlobs");
+  if (!include || include.length === 0) {
+    return new vscode.RelativePattern(base, "**/*.sol");
+  }
+  return new vscode.RelativePattern(base, include.join(","));
+}
+
+/**
+ * Gets the exclude pattern for the given base path.
+ * @param base The base path to get the exclude pattern for.
+ * @returns The exclude pattern for the given base path.
+ */
+export function getExcludePattern(
+  base: string
+): vscode.RelativePattern | undefined {
+  const exclude = getConfig("excludeGlobs");
+  if (!exclude || exclude.length === 0) {
+    return undefined;
+  }
+  return new vscode.RelativePattern(base, exclude.join(","));
 }
 
 /**
