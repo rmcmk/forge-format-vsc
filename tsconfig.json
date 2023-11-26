@@ -5,9 +5,8 @@
     "lib": ["ES2022"],
     "sourceMap": true,
     "rootDir": "./",
-    "strict": false,
-    "resolveJsonModule": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
-  }
+    "strict": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*", "package.json"]
 }
