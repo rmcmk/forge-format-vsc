@@ -16,32 +16,37 @@ export function activate(context: vscode.ExtensionContext) {
         options: vscode.FormattingOptions,
         token: vscode.CancellationToken
       ): Promise<vscode.TextEdit[]> {
-        return await parse(foundry, document, range);
+        return await parse(foundry, document, range).finally(() => {
+          maybeSaveAndClose(document);
+        });
       },
     }
   );
 
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((document) => {
-      if (document.languageId !== "solidity") {
-        return;
+      if (
+        document.languageId === "solidity" &&
+        getEditorConfig().formatOnSave &&
+        getConfig("saveAfterFormat") &&
+        getConfig("closeAfterSave")
+      ) {
+        vscode.commands.executeCommand("workbench.action.closeActiveEditor");
       }
-      if (!getEditorConfig().formatOnSave) {
-        return;
-      }
-      parse(foundry, document).then((textEdits) => {
-        const edit = new vscode.WorkspaceEdit();
-        edit.set(document.uri, textEdits);
-        vscode.workspace.applyEdit(edit).then(() => {
-          if (getConfig("saveAfterFormat")) {
-            document.save();
-          }
-        });
-      });
     })
   );
 
   console.log("Forge Format VSC extension activated!");
+}
+
+function maybeSaveAndClose(document: vscode.TextDocument) {
+  if (document.isDirty && !document.isClosed && getConfig("saveAfterFormat")) {
+    document.save().then((saved) => {
+      if (saved && getConfig("closeAfterSave")) {
+        vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+      }
+    });
+  }
 }
 
 export function deactivate() {

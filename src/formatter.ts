@@ -2,6 +2,7 @@ import { Foundry } from "./foundry";
 import * as vscode from "vscode";
 import { executeCommand } from "./bin";
 import { getWorkspacePath, isUriExcluded, isUriIncluded } from "./config";
+import * as diff from "diff";
 
 class ParseError extends Error {
   constructor(message: string) {
@@ -12,19 +13,12 @@ class ParseError extends Error {
   }
 }
 
-// Captures the line number, action, and content of a diff line
-// Group 1: Start line number (optional)
-// Group 2: End line number (optional)
-// Group 3: Action (+, -, or nothing)
-// Group 4: The rest of the line
-const DIFF_REGEX = /^(\d+)?\s*(\d+)?\s*\|([-+])?(.*)?/;
-
 const EMPTY_TEXT_EDITS: vscode.TextEdit[] = [];
 
 export async function parse(
   foundry: Foundry,
   document: vscode.TextDocument,
-  range?: vscode.Range
+  range: vscode.Range
 ): Promise<vscode.TextEdit[]> {
   try {
     const uri = document.uri;
@@ -36,21 +30,11 @@ export async function parse(
       throw new ParseError(`File is excluded: ${uri}`);
     }
 
-    // If no range is provided, assume the entire document
-    if (!range) {
-      range = new vscode.Range(
-        0,
-        0,
-        document.lineCount - 1,
-        document.lineAt(document.lineCount - 1).range.end.character
-      );
-    }
-
     const workspace = getWorkspacePath();
     const text = document.getText(range);
     const { stdout, exitCode } = await executeCommand(
       foundry.forgeBinaryPath,
-      ["fmt", "-", "--check"],
+      ["fmt", "-", "--raw", "--check"],
       text,
       workspace
     ).catch((error) => {
@@ -67,7 +51,7 @@ export async function parse(
       return EMPTY_TEXT_EDITS;
     }
 
-    const edits = parseDiff(stdout, document, range);
+    const edits = parseChanges(stdout, document, range);
     if (edits.length === 0) {
       throw new ParseError(
         "Parsing failed. Forge returned an exit code of 1 but no diffs were found."
@@ -89,52 +73,45 @@ export async function parse(
   }
 }
 
-function parseDiff(
-  diff: string,
+function parseChanges(
+  stdout: string,
   document: vscode.TextDocument,
   range: vscode.Range
 ): vscode.TextEdit[] {
-  // The input can be from a file or stdin.
-  // If it is from a file, the first line will be "Diff in <filename>:"
-  // If it is from stdin, the first line will be "Diff in stdin:"
-  let inputFrom: string | null = null;
-  const diffStartToken = "Diff in ";
-
-  const lines = diff.split("\n");
+  const changes = diff.diffLines(document.getText(range), stdout);
   const textEdits: vscode.TextEdit[] = [];
 
-  const startLine = range.start.line;
+  let lineNumber = range.start.line;
+  let charNumber = range.start.character;
+  let newText = "";
 
-  for (const line of lines) {
-    if (line.startsWith(diffStartToken)) {
-      inputFrom = line.slice(diffStartToken.length - 1).trim();
-      console.log(`Parsing diff from: ${inputFrom}`);
-    } else if (inputFrom && line) {
-      const match = line.match(DIFF_REGEX);
-
-      if (!match) {
-        throw new ParseError(`Unable to parse diff line: ${line}`);
-      }
-
-      const oldLineNumber = parseInt(match[1]);
-      const newLineNumber = parseInt(match[2]);
-      const action = match[3];
-      const content = match[4];
-
-      if (action === "+") {
-        if (!isNaN(oldLineNumber) || isNaN(newLineNumber)) {
-          throw new ParseError(`Unable to parse diff line: ${line}`);
-        }
-        const position = new vscode.Position(startLine + newLineNumber - 1, 0);
-        textEdits.push(vscode.TextEdit.insert(position, content));
-      } else if (action === "-") {
-        if (isNaN(oldLineNumber) || !isNaN(newLineNumber)) {
-          throw new ParseError(`Unable to parse diff line: ${line}`);
-        }
-        const range = document.lineAt(startLine + oldLineNumber - 1).range;
-        textEdits.push(vscode.TextEdit.delete(range));
-      }
+  changes.forEach((part) => {
+    if (part.added) {
+      newText += part.value;
+    } else if (part.removed) {
+      const start = new vscode.Position(lineNumber, charNumber);
+      const end = new vscode.Position(
+        lineNumber + (part.count || 1) - 1,
+        charNumber + part.value.length - 1
+      );
+      textEdits.push(vscode.TextEdit.delete(new vscode.Range(start, end)));
+    } else {
+      charNumber += part.value.length;
     }
+
+    // Update line and char numbers
+    const lines = part.value.split("\n");
+    lineNumber += lines.length - 1;
+    charNumber = lines.length > 1 ? lines[lines.length - 1].length : charNumber;
+  });
+
+  // Insert new content at the beginning of the range
+  if (newText.length > 0) {
+    const position = new vscode.Position(
+      range.start.line,
+      range.start.character
+    );
+    textEdits.push(vscode.TextEdit.insert(position, newText));
   }
 
   return textEdits;
