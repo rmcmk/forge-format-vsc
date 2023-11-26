@@ -1,44 +1,61 @@
-# Forge Format VSC
+# Forge Format VSC - Simplify Solidity Formatting in Visual Studio Code
 
-Welcome to the "Forge Format VSC" extension! This VSCode extension simplifies Solidity file formatting using Forge, a tool from Foundry. Easily format your Solidity files directly within the Visual Studio Code editor or utilize the right-click context menu for individual files or entire folders.
+Welcome to the Forge Format VSC extension! Streamline the formatting of your Solidity files with ease using Forge, a powerful tool from Foundry. This Visual Studio Code (VSCode) extension seamlessly integrates Forge into the VSCode formatter API, allowing efficient formatting of Solidity code directly within the editor.
 
-## Features
+## Key Features
 
-- **Forge Formatting:** Leverage the power of Forge from Foundry for efficient Solidity file formatting.
-- **Context Menu Integration:** Conveniently format files or entire folders directly from the VSCode context menu.
+- **Forge Formatting Integration:** Harness the capabilities of Forge from Foundry for quick and efficient Solidity file formatting.
+  - Integrated seamlessly into VSCode's powerful formatter API, seamlessly working with default VSCode commands.
+  - Utilize shortcuts like alt+shift+f for entire file formatting and cmd+k + cmd+f (or ctrl+k + ctrl+f) for formatting specific code ranges or snippets.
+  - Right-click inside a document for "format document" support.
+
+- **Context Menu Integration:** (Coming soon™) Easily format individual files or entire folders directly from the VSCode context menu.
 
 ## Requirements
 
-- **Foundry:** Ensure that Foundry is installed on your machine. You can download it from [getfoundry.sh](https://getfoundry.sh/).
+- **Foundry:** Ensure that Foundry is installed on your machine. Download it from [getfoundry.sh](https://getfoundry.sh/).
 
 ## Extension Settings
 
-This extension provides several configuration options:
+Tailor the extension to your preferences with the following configuration options:
 
-- **rmcmk.forge-format-vsc.includePaths:** A `string` array of globs to be included for formatting. If left undefined or empty, all paths will be formatted.
-- **rmcmk.forge-format-vsc.excludePaths:** A `string` array of globs to be excluded from formatting. If left undefined or empty, no paths will be excluded.
-- **rmcmk.forge-format-vsc.workspace:** Configure the workspace settings. It has two properties:
-  - **rmcmk.forge-format-vsc.workspace.automatic:** A `boolean`. If set to `true`, the extension will automatically detect the workspace root by looking at `vscode.workspace.workspaceFolders` and grabbing the first index.
-  - **rmcmk.forge-format-vsc.workspace.overrideRoot:** A `string`. Specify the workspace root to use. If both `overrideRoot` and `automatic` are true, `overrideRoot` will be used.
+- **Include and Exclude Globs:** Define globs for files to include or exclude from formatting.
+- **Auto-Save and Auto-Close:** Choose whether formatted files are automatically saved and closed after formatting.
+- **Workspace Configuration:** Customize workspace settings for automatic detection or specify a root override.
 
-These settings can be adjusted in the VS Code settings.
+Adjust these settings in the VSCode settings menu.
 
 ## Editor Configuration
 
-The extension also provides an editor configuration. These settings are derived from the VS Code default settings. If you want to change these, you can do so in your VS Code settings. This extension will not override these settings. 
-
-- **editor.formatOnSave:** A `boolean`. If set to `true`, the extension will automatically format your files on save.
+Forge Format VSC respects your editor configuration. Control automatic formatting on save and set the default formatter to "rmcmk.forge-format-vsc" in your VSCode settings.
 
 ## Known Issues
 
-- Formatting a range containing "invalid" Solidity, such as a snippet missing a closing bracket, may fail if Forge cannot construct a valid Parse Tree for the selected snippet.
+- Formatting a range with "invalid" Solidity, such as a snippet missing a closing bracket, may fail if Forge cannot construct a valid Parse Tree.
 
-If you come across any other issues, please refer to the [GitHub issues page](https://github.com/rmcmk/forge-format-vsc/issues) or report a new issue.
+If you encounter any issues, please refer to the [GitHub issues page](https://github.com/rmcmk/forge-format-vsc/issues) or report a new issue.
 
 ## Release Notes
+
+### 1.1.0
+- Format code ranges/snippets within a document using VSCode's built-in range formatter.
+- Ability to pipe code into Forge from the editor's buffer, enabling formatting of dirty files with pending changes.
+- Shifted from parsing diffs directly from Forge to generating custom diffs using the `jsdiff` library and raw formatted output from Forge. This change enhances integration with Visual Studio Code's TextEdit API, offering improved control over text edits within the editor.
+- New Settings:
+  - Implementation of `includeGlobs` and `excludeGlobs`.
+  - Options for saving and closing files after formatting.
+
+### 1.0.1
+- Improved parsing of Forge's diff output.
+- Correct handling of unmodified lines.
+- Enhanced tokenization of the diff for more reliable output across OS.
+- Fail-fast mechanism for impossible formatting.
+- Proper implementation of `editor.formatOnSave`.
+- Improved default settings for a consistent out-of-the-box experience.
+- Settings UI implementation for user-friendly configuration.
 
 ### 1.0.0
 
 - Initial release of "Forge Format VSC."
 
-**Enjoy!**
+**Enjoy effortless Solidity formatting with Forge in VSCode!**
