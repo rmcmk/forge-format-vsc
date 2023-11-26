@@ -100,6 +100,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/diff": "^5.0.8",
     "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.3",
     "@types/node": "18.x",
@@ -107,6 +108,7 @@
     "@typescript-eslint/eslint-plugin": "^6.9.0",
     "@typescript-eslint/parser": "^6.9.0",
     "@vscode/test-electron": "^2.3.6",
+    "diff": "^5.1.0",
     "eslint": "^8.52.0",
     "glob": "^10.3.10",
     "minimatch": "^9.0.3",
