@@ -14,6 +14,7 @@ class ParseError extends Error {
 }
 
 const EMPTY_TEXT_EDITS: vscode.TextEdit[] = [];
+const NO_NEWLINE_INDICATOR = `\\\\ No newline at end of file`;
 
 export async function parse(
   foundry: Foundry,
@@ -75,33 +76,49 @@ export async function parse(
 
 function parseChanges(
   stdout: string,
-  source: string,
+  fileName: string,
   text: string,
   range: vscode.Range
 ): vscode.TextEdit[] {
+  // Create a patch and parse it from the Forge stdout and the original content of the TextDocument
   const parsedDiff: diff.ParsedDiff[] = diff.parsePatch(
-    diff.createPatch(source, text, stdout)
+    diff.createPatch(fileName, text, stdout)
   );
+
   const textEdits: vscode.TextEdit[] = [];
 
-  let currentLine = range.start.line;
   for (const file of parsedDiff) {
     for (const hunk of file.hunks) {
-      for (const line of hunk.lines) {
-        const start = new vscode.Position(currentLine, 0);
+      const trailingTokens =
+        hunk.lines.length - (hunk.newLines + hunk.oldLines);
+      const oldLinesTotal = hunk.oldLines;
+      const oldStartLine = hunk.oldStart;
+      const oldEndLine = oldStartLine + oldLinesTotal;
+      const oldLines = hunk.lines.slice(oldStartLine - 1, oldEndLine - 1);
 
-        if (line.startsWith("+")) {
-          textEdits.push(
-            vscode.TextEdit.insert(start, line.slice(1)) // Add everything but the '+' character
-          );
-        } else if (line.startsWith("-")) {
-          const end = new vscode.Position(currentLine, line.length - 1); // Remove everything but the '-' character
-          textEdits.push(vscode.TextEdit.delete(new vscode.Range(start, end)));
-          currentLine--;
-        }
+      const newLinesTotal = hunk.newLines;
+      const newStartLine = oldLinesTotal + (hunk.newStart + trailingTokens);
+      const newEndLine = oldLinesTotal + newLinesTotal;
+      const newLines = hunk.lines.slice(newStartLine - 1); // Grab all remaining lines for the new content
 
-        currentLine++;
+      // console.log(`oldLinesTotal: ${oldLinesTotal} | oldStartLine: ${oldStartLine} | oldEndLine: ${oldEndLine} | oldLines: ${oldLines.join("\n")}`)
+      // console.log(`newLinesTotal: ${newLinesTotal} | newStartLine: ${newStartLine} | newEndLine: ${newEndLine} | newLines: ${newLines.join("\n")}`);
+
+      // Check if a newline needs to be added to the end of the file
+      if (newLines[newLines.length - 1] === NO_NEWLINE_INDICATOR) {
+        // Remove the 'no newline' indicator
+        newLines.pop();
+      } else {
+        // If the last line in the file is not a 'no newline' indicator, add a newline
+        newLines.push("+");
       }
+
+      textEdits.push(
+        vscode.TextEdit.replace(
+          range,
+          newLines.map((line) => line.slice(1)).join("\n") // Slice the first character (diff indicator: +, -, \s) from each line
+        )
+      );
     }
   }
 
