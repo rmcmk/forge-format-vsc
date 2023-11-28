@@ -37,6 +37,9 @@ If you encounter any issues, please refer to the [GitHub issues page](https://gi
 
 ## Release Notes
 
+### 1.1.1
+- Fix occasional inconsistencies when formatting ranges.
+
 ### 1.1.0
 - Format code ranges/snippets within a document using VSCode's built-in range formatter.
 - Ability to pipe code into Forge from the editor's buffer, enabling formatting of dirty files with pending changes.
