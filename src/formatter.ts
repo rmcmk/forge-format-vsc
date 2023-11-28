@@ -34,7 +34,7 @@ export async function parse(
     const text = document.getText(range);
     const { stdout, exitCode } = await executeCommand(
       foundry.forgeBinaryPath,
-      ["fmt", "-", "--raw", "--check"],
+      ["fmt", "-", "--check", "--raw"],
       text,
       workspace
     ).catch((error) => {
@@ -51,7 +51,7 @@ export async function parse(
       return EMPTY_TEXT_EDITS;
     }
 
-    const edits = parseChanges(stdout, document, range);
+    const edits = parseChanges(stdout, document.fileName, text, range);
     if (edits.length === 0) {
       throw new ParseError(
         "Parsing failed. Forge returned an exit code of 1 but no diffs were found."
@@ -75,43 +75,34 @@ export async function parse(
 
 function parseChanges(
   stdout: string,
-  document: vscode.TextDocument,
+  source: string,
+  text: string,
   range: vscode.Range
 ): vscode.TextEdit[] {
-  const changes = diff.diffLines(document.getText(range), stdout);
+  const parsedDiff: diff.ParsedDiff[] = diff.parsePatch(
+    diff.createPatch(source, text, stdout)
+  );
   const textEdits: vscode.TextEdit[] = [];
 
-  let lineNumber = range.start.line;
-  let charNumber = range.start.character;
-  let newText = "";
+  let currentLine = range.start.line;
+  for (const file of parsedDiff) {
+    for (const hunk of file.hunks) {
+      for (const line of hunk.lines) {
+        const start = new vscode.Position(currentLine, 0);
 
-  changes.forEach((part) => {
-    if (part.added) {
-      newText += part.value;
-    } else if (part.removed) {
-      const start = new vscode.Position(lineNumber, charNumber);
-      const end = new vscode.Position(
-        lineNumber + (part.count || 1) - 1,
-        charNumber + part.value.length - 1
-      );
-      textEdits.push(vscode.TextEdit.delete(new vscode.Range(start, end)));
-    } else {
-      charNumber += part.value.length;
+        if (line.startsWith("+")) {
+          textEdits.push(
+            vscode.TextEdit.insert(start, line.slice(1)) // Add everything but the '+' character
+          );
+        } else if (line.startsWith("-")) {
+          const end = new vscode.Position(currentLine, line.length - 1); // Remove everything but the '-' character
+          textEdits.push(vscode.TextEdit.delete(new vscode.Range(start, end)));
+          currentLine--;
+        }
+
+        currentLine++;
+      }
     }
-
-    // Update line and char numbers
-    const lines = part.value.split("\n");
-    lineNumber += lines.length - 1;
-    charNumber = lines.length > 1 ? lines[lines.length - 1].length : charNumber;
-  });
-
-  // Insert new content at the beginning of the range
-  if (newText.length > 0) {
-    const position = new vscode.Position(
-      range.start.line,
-      range.start.character
-    );
-    textEdits.push(vscode.TextEdit.insert(position, newText));
   }
 
   return textEdits;
